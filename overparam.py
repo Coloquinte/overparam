@@ -78,7 +78,7 @@ class OverParameterization(object):
 
 T_module = TypeVar('T_module', bound=Module)
 
-def overparameterization(module: T_module, name: str = 'weight', expansion: float = 2.0) -> T_module:
+def overparam(module: T_module, name: str = 'weight', expansion: float = 2.0) -> T_module:
     r"""Applies overparameterization to a parameter in the given module.
 
     .. math::
@@ -104,7 +104,7 @@ def overparameterization(module: T_module, name: str = 'weight', expansion: floa
 
     Example::
 
-        >>> m = overparameterization(nn.Linear(20, 40), name='weight', expansion=4)
+        >>> m = overparam(nn.Linear(20, 40), name='weight', expansion=4)
         >>> m
         Linear(in_features=20, out_features=40, bias=True)
         >>> m.weight_expand.size()
@@ -120,7 +120,7 @@ def overparameterization(module: T_module, name: str = 'weight', expansion: floa
 
 
 #[docs]
-def remove_overparameterization(module: T_module, name: str = 'weight') -> T_module:
+def remove_overparam(module: T_module, name: str = 'weight') -> T_module:
     r"""Removes the overparameterization from a module.
 
     Args:
@@ -128,8 +128,8 @@ def remove_overparameterization(module: T_module, name: str = 'weight') -> T_mod
         name (str, optional): name of weight parameter
 
     Example:
-        >>> m = overparameterization(nn.Linear(20, 40))
-        >>> remove_overparameterization(m)
+        >>> m = overparam(nn.Linear(20, 40))
+        >>> remove_overparam(m)
     """
     for k, hook in module._forward_pre_hooks.items():
         if isinstance(hook, OverParameterization) and hook.name == name:
