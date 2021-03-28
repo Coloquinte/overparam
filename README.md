@@ -15,7 +15,7 @@ from overparam import overparam, remove_overparam
 
 m = nn.Conv2d(10, 20, kernel_size=3)
 overparam(m, expansion=4)
-
+...
 remove_overparam(m)
 ```
 
