@@ -1,7 +1,7 @@
 r"""
 Overparameterization from https://arxiv.org/abs/1811.10495
 """
-from torch import Tensor
+from torch import Tensor, einsum
 from torch.nn import Module
 from torch.nn.parameter import Parameter
 from torch.nn.init import kaiming_uniform_
@@ -9,7 +9,7 @@ from typing import Any, TypeVar
 
 
 def _overparameterization(expand_w, kernel_w, reduce_w):
-    return torch.matmul(torch.matmul(reduce_w, kernel_w), expand_w)
+    return einsum("ij,jk...,kl->il...", reduce_w, kernel_w, expand_w)
 
 
 class OverParameterization(object):
@@ -46,14 +46,14 @@ class OverParameterization(object):
         in_channels = weight.shape[1]
         out_channels = weight.shape[0]
 
-        expand_w = torch.Tensor(int(expansion*in_channels), in_channels)
+        expand_w = Tensor(int(expansion*in_channels), in_channels)
         kaiming_uniform_(expand_w)
-        reduce_w = torch.Tensor(out_channels, int(expansion*out_channels))
+        reduce_w = Tensor(out_channels, int(expansion*out_channels))
         kaiming_uniform_(reduce_w)
 
         # TODO: find a kernel so that the expanded layer matches the original values
         # This could be done with two least-square solutions
-        kernel_w = torch.Tensor(int(expansion*out_channels), int(expansion*in_channels))
+        kernel_w = Tensor(int(expansion*out_channels), int(expansion*in_channels), *weight.shape[2:])
         kaiming_uniform_(kernel_w)
 
         # add the new parameters
