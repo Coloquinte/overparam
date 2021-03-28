@@ -1,10 +1,9 @@
 r"""
 Overparameterization from https://arxiv.org/abs/1811.10495
 """
-from torch import Tensor, einsum
+from torch import Tensor, einsum, eye
 from torch.nn import Module
 from torch.nn.parameter import Parameter
-from torch.nn.init import kaiming_uniform_
 from typing import Any, TypeVar
 
 
@@ -36,7 +35,6 @@ class OverParameterization(object):
                 raise RuntimeError("Cannot register two overparameterization hooks on "
                                    "the same parameter {}".format(name))
 
-
         fn = OverParameterization(name)
 
         weight = getattr(module, name)
@@ -46,15 +44,14 @@ class OverParameterization(object):
         in_channels = weight.shape[1]
         out_channels = weight.shape[0]
 
-        expand_w = Tensor(int(expansion*in_channels), in_channels)
-        kaiming_uniform_(expand_w)
-        reduce_w = Tensor(out_channels, int(expansion*out_channels))
-        kaiming_uniform_(reduce_w)
-
-        # TODO: find a kernel so that the expanded layer matches the original values
-        # This could be done with two least-square solutions
+        # Initialize the tensors so that the same weights are kept
+        # expand/reduce are just identity matrices
+        expand_w = eye(int(expansion*in_channels), in_channels)
+        reduce_w = eye(out_channels, int(expansion*out_channels))
+        # kernel is initialized randomly so that we can still train the module
         kernel_w = Tensor(int(expansion*out_channels), int(expansion*in_channels), *weight.shape[2:])
-        kaiming_uniform_(kernel_w)
+        kernel_w.uniform_(weight.min().item(), weight.max().item())
+        kernel_w[:out_channels, :in_channels] = weight
 
         # add the new parameters
         module.register_parameter(name + '_expand', Parameter(expand_w.data))
